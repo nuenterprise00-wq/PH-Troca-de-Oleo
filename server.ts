@@ -1,0 +1,178 @@
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import Database from "better-sqlite3";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const db = new Database("database.sqlite");
+
+// Initialize Database
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS vehicles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    brand TEXT,
+    model TEXT,
+    year INTEGER,
+    engine TEXT,
+    fuel TEXT,
+    oil_spec TEXT,
+    oil_quantity REAL,
+    filter_type TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    brand TEXT,
+    type TEXT, -- Sintético, Semi-Sintético, Mineral
+    viscosity TEXT,
+    price_per_liter REAL,
+    service_fee REAL DEFAULT 0
+  );
+
+  INSERT OR REPLACE INTO settings (key, value) VALUES ('whatsapp_number', '5521997573111');
+`);
+
+// Seed some data if empty
+const vehicleCount = db.prepare("SELECT COUNT(*) as count FROM vehicles").get() as { count: number };
+if (vehicleCount.count === 0) {
+  const insertVehicle = db.prepare(`
+    INSERT INTO vehicles (brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  insertVehicle.run('Honda', 'Civic', 2018, '2.0', 'Flex', '0W20 Sintético', 4.2, 'PH5939');
+  insertVehicle.run('Toyota', 'Corolla', 2020, '2.0', 'Flex', '0W20 Sintético', 4.4, 'PH10358');
+  insertVehicle.run('Volkswagen', 'Gol', 2015, '1.0', 'Flex', '5W40 Sintético', 3.5, 'PH5548');
+  insertVehicle.run('Chevrolet', 'Onix', 2019, '1.0 Turbo', 'Flex', '5W30 Sintético', 3.5, 'PH4722');
+}
+
+const productCount = db.prepare("SELECT COUNT(*) as count FROM products").get() as { count: number };
+if (productCount.count === 0) {
+  const insertProduct = db.prepare(`
+    INSERT INTO products (name, brand, type, viscosity, price_per_liter, service_fee)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  insertProduct.run('Mobil Super', 'Mobil', 'Sintético', '0W20', 65.0, 30.0);
+  insertProduct.run('Castrol Magnatec', 'Castrol', 'Sintético', '5W30', 58.0, 30.0);
+  insertProduct.run('Shell Helix Ultra', 'Shell', 'Sintético', '5W40', 62.0, 30.0);
+}
+
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
+
+  app.use(express.json());
+
+  // API Routes
+  app.get("/api/settings", (req, res) => {
+    const settings = db.prepare("SELECT * FROM settings").all();
+    const config = settings.reduce((acc: any, curr: any) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+    res.json(config);
+  });
+
+  app.post("/api/settings", (req, res) => {
+    const { whatsapp_number } = req.body;
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run('whatsapp_number', whatsapp_number);
+    res.json({ success: true });
+  });
+
+  app.get("/api/brands", (req, res) => {
+    const brands = db.prepare("SELECT DISTINCT brand FROM vehicles ORDER BY brand").all();
+    res.json(brands.map((b: any) => b.brand));
+  });
+
+  app.get("/api/models/:brand", (req, res) => {
+    const models = db.prepare("SELECT DISTINCT model FROM vehicles WHERE brand = ? ORDER BY model").all(req.params.brand);
+    res.json(models.map((m: any) => m.model));
+  });
+
+  app.get("/api/years/:brand/:model", (req, res) => {
+    const years = db.prepare("SELECT DISTINCT year FROM vehicles WHERE brand = ? AND model = ? ORDER BY year DESC").all(req.params.brand, req.params.model);
+    res.json(years.map((y: any) => y.year));
+  });
+
+  app.get("/api/engines/:brand/:model/:year", (req, res) => {
+    const engines = db.prepare("SELECT DISTINCT engine, fuel, id FROM vehicles WHERE brand = ? AND model = ? AND year = ?").all(req.params.brand, req.params.model, req.params.year);
+    res.json(engines);
+  });
+
+  app.get("/api/vehicle/:id", (req, res) => {
+    const vehicle = db.prepare("SELECT * FROM vehicles WHERE id = ?").get(req.params.id);
+    res.json(vehicle);
+  });
+
+  app.get("/api/products", (req, res) => {
+    const products = db.prepare("SELECT * FROM products").all();
+    res.json(products);
+  });
+
+  // Admin Routes
+  app.get("/api/admin/vehicles", (req, res) => {
+    const vehicles = db.prepare("SELECT * FROM vehicles").all();
+    res.json(vehicles);
+  });
+
+  app.post("/api/admin/vehicles", (req, res) => {
+    const { brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type } = req.body;
+    db.prepare(`
+      INSERT INTO vehicles (brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/admin/vehicles/:id", (req, res) => {
+    db.prepare("DELETE FROM vehicles WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/products", (req, res) => {
+    const products = db.prepare("SELECT * FROM products").all();
+    res.json(products);
+  });
+
+  app.post("/api/admin/products", (req, res) => {
+    const { name, brand, type, viscosity, price_per_liter, service_fee } = req.body;
+    db.prepare(`
+      INSERT INTO products (name, brand, type, viscosity, price_per_liter, service_fee)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(name, brand, type, viscosity, price_per_liter, service_fee);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/admin/products/:id", (req, res) => {
+    db.prepare("DELETE FROM products WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static(path.join(__dirname, "dist")));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
