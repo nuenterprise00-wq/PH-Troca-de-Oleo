@@ -25,7 +25,8 @@ db.exec(`
     fuel TEXT,
     oil_spec TEXT,
     oil_quantity REAL,
-    filter_type TEXT
+    filter_type TEXT,
+    UNIQUE(brand, model, year, engine)
   );
 
   CREATE TABLE IF NOT EXISTS products (
@@ -33,76 +34,71 @@ db.exec(`
     name TEXT,
     brand TEXT,
     type TEXT, -- Sintético, Semi-Sintético, Mineral
-    viscosity TEXT
+    viscosity TEXT,
+    UNIQUE(name, brand, viscosity)
   );
 
   INSERT OR REPLACE INTO settings (key, value) VALUES ('whatsapp_number', '5521997573111');
 `);
 
-// Seed some data if empty
-const vehicleCount = db.prepare("SELECT COUNT(*) as count FROM vehicles").get() as { count: number };
-if (vehicleCount.count === 0) {
-  const insertVehicle = db.prepare(`
-    INSERT INTO vehicles (brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  
-  // Honda
-  insertVehicle.run('Honda', 'Civic', 2018, '2.0', 'Flex', '0W20 Sintético', 4.2, 'PH5939');
-  insertVehicle.run('Honda', 'Civic', 2014, '1.8', 'Flex', '0W20 Sintético', 3.7, 'PH5939');
-  insertVehicle.run('Honda', 'Fit', 2015, '1.5', 'Flex', '0W20 Sintético', 3.6, 'PH5939');
-  insertVehicle.run('Honda', 'HR-V', 2019, '1.8', 'Flex', '0W20 Sintético', 3.7, 'PH5939');
+// Robust Seeding Logic
+const insertVehicle = db.prepare(`
+  INSERT OR IGNORE INTO vehicles (brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
 
-  // Toyota
-  insertVehicle.run('Toyota', 'Corolla', 2020, '2.0', 'Flex', '0W20 Sintético', 4.4, 'PH10358');
-  insertVehicle.run('Toyota', 'Corolla', 2015, '1.8', 'Flex', '5W30 Sintético', 4.2, 'PH10358');
-  insertVehicle.run('Toyota', 'Etios', 2017, '1.3', 'Flex', '5W30 Sintético', 3.4, 'PH10358');
-  insertVehicle.run('Toyota', 'Hilux', 2018, '2.8 Diesel', 'Diesel', '5W30 Sintético', 7.5, 'PH11457');
+// Honda
+insertVehicle.run('Honda', 'Civic', 2018, '2.0', 'Flex', '0W20 Sintético', 4.2, 'PH5939');
+insertVehicle.run('Honda', 'Civic', 2014, '1.8', 'Flex', '0W20 Sintético', 3.7, 'PH5939');
+insertVehicle.run('Honda', 'Fit', 2015, '1.5', 'Flex', '0W20 Sintético', 3.6, 'PH5939');
+insertVehicle.run('Honda', 'HR-V', 2019, '1.8', 'Flex', '0W20 Sintético', 3.7, 'PH5939');
 
-  // Volkswagen
-  insertVehicle.run('Volkswagen', 'Gol', 2015, '1.0', 'Flex', '5W40 Sintético', 3.5, 'PH5548');
-  insertVehicle.run('Volkswagen', 'Polo', 2020, '1.0 TSI', 'Flex', '5W40 Sintético', 4.0, 'PH5548');
-  insertVehicle.run('Volkswagen', 'Amarok', 2015, '2.0 Diesel', 'Diesel', '5W30 Sintético', 7.0, 'PH10958');
-  insertVehicle.run('Volkswagen', 'Golf', 2016, '1.4 TSI', 'Flex', '5W40 Sintético', 4.0, 'PH5548');
+// Toyota
+insertVehicle.run('Toyota', 'Corolla', 2020, '2.0', 'Flex', '0W20 Sintético', 4.4, 'PH10358');
+insertVehicle.run('Toyota', 'Corolla', 2015, '1.8', 'Flex', '5W30 Sintético', 4.2, 'PH10358');
+insertVehicle.run('Toyota', 'Etios', 2017, '1.3', 'Flex', '5W30 Sintético', 3.4, 'PH10358');
+insertVehicle.run('Toyota', 'Hilux', 2018, '2.8 Diesel', 'Diesel', '5W30 Sintético', 7.5, 'PH11457');
 
-  // Chevrolet
-  insertVehicle.run('Chevrolet', 'Onix', 2019, '1.0 Turbo', 'Flex', '5W30 Sintético', 3.5, 'PH4722');
-  insertVehicle.run('Chevrolet', 'Onix', 2015, '1.0', 'Flex', '5W30 Semi-Sintético', 3.5, 'PH4722');
-  insertVehicle.run('Chevrolet', 'S10', 2018, '2.8 Diesel', 'Diesel', '5W30 Sintético', 6.0, 'PH11462');
-  insertVehicle.run('Chevrolet', 'Cruze', 2017, '1.4 Turbo', 'Flex', '5W30 Sintético', 4.0, 'PH4722');
+// Volkswagen
+insertVehicle.run('Volkswagen', 'Gol', 2015, '1.0', 'Flex', '5W40 Sintético', 3.5, 'PH5548');
+insertVehicle.run('Volkswagen', 'Polo', 2020, '1.0 TSI', 'Flex', '5W40 Sintético', 4.0, 'PH5548');
+insertVehicle.run('Volkswagen', 'Amarok', 2015, '2.0 Diesel', 'Diesel', '5W30 Sintético', 7.0, 'PH10958');
+insertVehicle.run('Volkswagen', 'Golf', 2016, '1.4 TSI', 'Flex', '5W40 Sintético', 4.0, 'PH5548');
 
-  // Fiat
-  insertVehicle.run('Fiat', 'Palio', 2014, '1.0 Fire', 'Flex', '15W40 Semi-Sintético', 2.7, 'PH5949');
-  insertVehicle.run('Fiat', 'Toro', 2018, '2.0 Diesel', 'Diesel', '5W30 Sintético', 4.8, 'PH11462');
-  insertVehicle.run('Fiat', 'Argo', 2020, '1.0 Firefly', 'Flex', '0W20 Sintético', 3.2, 'PH5949');
-  insertVehicle.run('Fiat', 'Strada', 2019, '1.4 Fire', 'Flex', '15W40 Semi-Sintético', 2.7, 'PH5949');
+// Chevrolet
+insertVehicle.run('Chevrolet', 'Onix', 2019, '1.0 Turbo', 'Flex', '5W30 Sintético', 3.5, 'PH4722');
+insertVehicle.run('Chevrolet', 'Onix', 2015, '1.0', 'Flex', '5W30 Semi-Sintético', 3.5, 'PH4722');
+insertVehicle.run('Chevrolet', 'S10', 2018, '2.8 Diesel', 'Diesel', '5W30 Sintético', 6.0, 'PH11462');
+insertVehicle.run('Chevrolet', 'Cruze', 2017, '1.4 Turbo', 'Flex', '5W30 Sintético', 4.0, 'PH4722');
 
-  // Ford
-  insertVehicle.run('Ford', 'Ka', 2018, '1.0 3cil', 'Flex', '5W20 Sintético', 4.0, 'PH10027');
-  insertVehicle.run('Ford', 'EcoSport', 2017, '1.5 3cil', 'Flex', '5W20 Sintético', 4.0, 'PH10027');
-  insertVehicle.run('Ford', 'Ranger', 2015, '3.2 Diesel', 'Diesel', '5W30 Sintético', 9.8, 'PH11457');
+// Fiat
+insertVehicle.run('Fiat', 'Palio', 2014, '1.0 Fire', 'Flex', '15W40 Semi-Sintético', 2.7, 'PH5949');
+insertVehicle.run('Fiat', 'Toro', 2018, '2.0 Diesel', 'Diesel', '5W30 Sintético', 4.8, 'PH11462');
+insertVehicle.run('Fiat', 'Argo', 2020, '1.0 Firefly', 'Flex', '0W20 Sintético', 3.2, 'PH5949');
+insertVehicle.run('Fiat', 'Strada', 2019, '1.4 Fire', 'Flex', '15W40 Semi-Sintético', 2.7, 'PH5949');
 
-  // Hyundai
-  insertVehicle.run('Hyundai', 'HB20', 2019, '1.0', 'Flex', '5W30 Sintético', 3.5, 'PH10358');
-  insertVehicle.run('Hyundai', 'Creta', 2020, '2.0', 'Flex', '5W30 Sintético', 4.0, 'PH10358');
+// Ford
+insertVehicle.run('Ford', 'Ka', 2018, '1.0 3cil', 'Flex', '5W20 Sintético', 4.0, 'PH10027');
+insertVehicle.run('Ford', 'EcoSport', 2017, '1.5 3cil', 'Flex', '5W20 Sintético', 4.0, 'PH10027');
+insertVehicle.run('Ford', 'Ranger', 2015, '3.2 Diesel', 'Diesel', '5W30 Sintético', 9.8, 'PH11457');
 
-  // Jeep
-  insertVehicle.run('Jeep', 'Renegade', 2018, '1.8', 'Flex', '5W30 Sintético', 4.3, 'PH11462');
-  insertVehicle.run('Jeep', 'Compass', 2019, '2.0 Diesel', 'Diesel', '5W30 Sintético', 4.8, 'PH11462');
-}
+// Hyundai
+insertVehicle.run('Hyundai', 'HB20', 2019, '1.0', 'Flex', '5W30 Sintético', 3.5, 'PH10358');
+insertVehicle.run('Hyundai', 'Creta', 2020, '2.0', 'Flex', '5W30 Sintético', 4.0, 'PH10358');
 
-const productCount = db.prepare("SELECT COUNT(*) as count FROM products").get() as { count: number };
-if (productCount.count === 0) {
-  const insertProduct = db.prepare(`
-    INSERT INTO products (name, brand, type, viscosity)
-    VALUES (?, ?, ?, ?)
-  `);
-  insertProduct.run('Super 3000', 'Mobil', 'Sintético', '0W20');
-  insertProduct.run('Magnatec', 'Castrol', 'Sintético', '5W30');
-  insertProduct.run('Helix Ultra', 'Shell', 'Sintético', '5W40');
-  insertProduct.run('Evolution', 'Elf', 'Sintético', '5W30');
-  insertProduct.run('Selenia K', 'Petronas', 'Sintético', '5W30');
-}
+// Jeep
+insertVehicle.run('Jeep', 'Renegade', 2018, '1.8', 'Flex', '5W30 Sintético', 4.3, 'PH11462');
+insertVehicle.run('Jeep', 'Compass', 2019, '2.0 Diesel', 'Diesel', '5W30 Sintético', 4.8, 'PH11462');
+
+const insertProduct = db.prepare(`
+  INSERT OR IGNORE INTO products (name, brand, type, viscosity)
+  VALUES (?, ?, ?, ?)
+`);
+insertProduct.run('Super 3000', 'Mobil', 'Sintético', '0W20');
+insertProduct.run('Magnatec', 'Castrol', 'Sintético', '5W30');
+insertProduct.run('Helix Ultra', 'Shell', 'Sintético', '5W40');
+insertProduct.run('Evolution', 'Elf', 'Sintético', '5W30');
+insertProduct.run('Selenia K', 'Petronas', 'Sintético', '5W30');
 
 async function startServer() {
   const app = express();
