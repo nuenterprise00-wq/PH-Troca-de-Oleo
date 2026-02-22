@@ -33,9 +33,7 @@ db.exec(`
     name TEXT,
     brand TEXT,
     type TEXT, -- Sintético, Semi-Sintético, Mineral
-    viscosity TEXT,
-    price_per_liter REAL,
-    service_fee REAL DEFAULT 0
+    viscosity TEXT
   );
 
   INSERT OR REPLACE INTO settings (key, value) VALUES ('whatsapp_number', '5521997573111');
@@ -48,21 +46,62 @@ if (vehicleCount.count === 0) {
     INSERT INTO vehicles (brand, model, year, engine, fuel, oil_spec, oil_quantity, filter_type)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
+  
+  // Honda
   insertVehicle.run('Honda', 'Civic', 2018, '2.0', 'Flex', '0W20 Sintético', 4.2, 'PH5939');
+  insertVehicle.run('Honda', 'Civic', 2014, '1.8', 'Flex', '0W20 Sintético', 3.7, 'PH5939');
+  insertVehicle.run('Honda', 'Fit', 2015, '1.5', 'Flex', '0W20 Sintético', 3.6, 'PH5939');
+  insertVehicle.run('Honda', 'HR-V', 2019, '1.8', 'Flex', '0W20 Sintético', 3.7, 'PH5939');
+
+  // Toyota
   insertVehicle.run('Toyota', 'Corolla', 2020, '2.0', 'Flex', '0W20 Sintético', 4.4, 'PH10358');
+  insertVehicle.run('Toyota', 'Corolla', 2015, '1.8', 'Flex', '5W30 Sintético', 4.2, 'PH10358');
+  insertVehicle.run('Toyota', 'Etios', 2017, '1.3', 'Flex', '5W30 Sintético', 3.4, 'PH10358');
+  insertVehicle.run('Toyota', 'Hilux', 2018, '2.8 Diesel', 'Diesel', '5W30 Sintético', 7.5, 'PH11457');
+
+  // Volkswagen
   insertVehicle.run('Volkswagen', 'Gol', 2015, '1.0', 'Flex', '5W40 Sintético', 3.5, 'PH5548');
+  insertVehicle.run('Volkswagen', 'Polo', 2020, '1.0 TSI', 'Flex', '5W40 Sintético', 4.0, 'PH5548');
+  insertVehicle.run('Volkswagen', 'Amarok', 2015, '2.0 Diesel', 'Diesel', '5W30 Sintético', 7.0, 'PH10958');
+  insertVehicle.run('Volkswagen', 'Golf', 2016, '1.4 TSI', 'Flex', '5W40 Sintético', 4.0, 'PH5548');
+
+  // Chevrolet
   insertVehicle.run('Chevrolet', 'Onix', 2019, '1.0 Turbo', 'Flex', '5W30 Sintético', 3.5, 'PH4722');
+  insertVehicle.run('Chevrolet', 'Onix', 2015, '1.0', 'Flex', '5W30 Semi-Sintético', 3.5, 'PH4722');
+  insertVehicle.run('Chevrolet', 'S10', 2018, '2.8 Diesel', 'Diesel', '5W30 Sintético', 6.0, 'PH11462');
+  insertVehicle.run('Chevrolet', 'Cruze', 2017, '1.4 Turbo', 'Flex', '5W30 Sintético', 4.0, 'PH4722');
+
+  // Fiat
+  insertVehicle.run('Fiat', 'Palio', 2014, '1.0 Fire', 'Flex', '15W40 Semi-Sintético', 2.7, 'PH5949');
+  insertVehicle.run('Fiat', 'Toro', 2018, '2.0 Diesel', 'Diesel', '5W30 Sintético', 4.8, 'PH11462');
+  insertVehicle.run('Fiat', 'Argo', 2020, '1.0 Firefly', 'Flex', '0W20 Sintético', 3.2, 'PH5949');
+  insertVehicle.run('Fiat', 'Strada', 2019, '1.4 Fire', 'Flex', '15W40 Semi-Sintético', 2.7, 'PH5949');
+
+  // Ford
+  insertVehicle.run('Ford', 'Ka', 2018, '1.0 3cil', 'Flex', '5W20 Sintético', 4.0, 'PH10027');
+  insertVehicle.run('Ford', 'EcoSport', 2017, '1.5 3cil', 'Flex', '5W20 Sintético', 4.0, 'PH10027');
+  insertVehicle.run('Ford', 'Ranger', 2015, '3.2 Diesel', 'Diesel', '5W30 Sintético', 9.8, 'PH11457');
+
+  // Hyundai
+  insertVehicle.run('Hyundai', 'HB20', 2019, '1.0', 'Flex', '5W30 Sintético', 3.5, 'PH10358');
+  insertVehicle.run('Hyundai', 'Creta', 2020, '2.0', 'Flex', '5W30 Sintético', 4.0, 'PH10358');
+
+  // Jeep
+  insertVehicle.run('Jeep', 'Renegade', 2018, '1.8', 'Flex', '5W30 Sintético', 4.3, 'PH11462');
+  insertVehicle.run('Jeep', 'Compass', 2019, '2.0 Diesel', 'Diesel', '5W30 Sintético', 4.8, 'PH11462');
 }
 
 const productCount = db.prepare("SELECT COUNT(*) as count FROM products").get() as { count: number };
 if (productCount.count === 0) {
   const insertProduct = db.prepare(`
-    INSERT INTO products (name, brand, type, viscosity, price_per_liter, service_fee)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO products (name, brand, type, viscosity)
+    VALUES (?, ?, ?, ?)
   `);
-  insertProduct.run('Mobil Super', 'Mobil', 'Sintético', '0W20', 65.0, 30.0);
-  insertProduct.run('Castrol Magnatec', 'Castrol', 'Sintético', '5W30', 58.0, 30.0);
-  insertProduct.run('Shell Helix Ultra', 'Shell', 'Sintético', '5W40', 62.0, 30.0);
+  insertProduct.run('Super 3000', 'Mobil', 'Sintético', '0W20');
+  insertProduct.run('Magnatec', 'Castrol', 'Sintético', '5W30');
+  insertProduct.run('Helix Ultra', 'Shell', 'Sintético', '5W40');
+  insertProduct.run('Evolution', 'Elf', 'Sintético', '5W30');
+  insertProduct.run('Selenia K', 'Petronas', 'Sintético', '5W30');
 }
 
 async function startServer() {

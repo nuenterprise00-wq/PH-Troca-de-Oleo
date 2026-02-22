@@ -16,8 +16,6 @@ export interface Product {
   brand: string;
   type: string;
   viscosity: string;
-  price_per_liter: number;
-  service_fee: number;
 }
 
 export interface CustomerData {
