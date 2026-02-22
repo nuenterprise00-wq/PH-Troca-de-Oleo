@@ -1,3 +1,32 @@
+export interface Manufacturer {
+  id: string;
+  name: string;
+}
+
+export interface VehicleModel {
+  id: string;
+  manufacturerId: string;
+  name: string;
+}
+
+export interface Engine {
+  id: string;
+  modelId: string;
+  name: string; // Ex: 1.6 MSI, 2.0 TSI, 1.0 Firefly
+  code?: string; // Ex: EA211, EA111
+  fuel: string;
+  years: number[]; // Anos em que este motor saiu neste modelo
+}
+
+export interface OilSpec {
+  engineId: string;
+  viscosity: string;
+  manufacturerNorm: string; // Ex: VW 508.88, Dexos 1 Gen 2
+  acea?: string;
+  api?: string;
+  capacity: number; // Litros
+}
+
 export interface Vehicle {
   id: number;
   brand: string;
@@ -10,14 +39,6 @@ export interface Vehicle {
   filter_type: string;
 }
 
-export interface Product {
-  id: number;
-  name: string;
-  brand: string;
-  type: string;
-  viscosity: string;
-}
-
 export interface CustomerData {
   name: string;
   phone: string;
@@ -25,8 +46,4 @@ export interface CustomerData {
   preferredTime: string;
   km: string;
   plate?: string;
-}
-
-export interface Settings {
-  whatsapp_number: string;
 }
