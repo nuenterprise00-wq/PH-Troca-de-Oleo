@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Car, 
@@ -21,22 +21,17 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
-import { Vehicle, Product, CustomerData, Settings } from './types';
+import { Vehicle, CustomerData } from './types';
+import { VEHICLES, WHATSAPP_NUMBER } from './data';
 
 export default function App() {
   const [step, setStep] = useState(0);
   
   // Form State
-  const [brands, setBrands] = useState<string[]>([]);
-  const [models, setModels] = useState<string[]>([]);
-  const [years, setYears] = useState<number[]>([]);
-  const [engines, setEngines] = useState<any[]>([]);
-  
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedYear, setSelectedYear] = useState<number | ''>('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
-  const [vehicleDetails, setVehicleDetails] = useState<Vehicle | null>(null);
   
   const [customer, setCustomer] = useState<CustomerData>({
     name: '',
@@ -46,48 +41,33 @@ export default function App() {
     km: ''
   });
 
-  const [settings, setSettings] = useState<Settings>({ whatsapp_number: '' });
-
-  useEffect(() => {
-    fetch('/api/brands').then(res => res.json()).then(setBrands);
-    fetch('/api/settings').then(res => res.json()).then(setSettings);
-  }, []);
-
-  useEffect(() => {
-    if (selectedBrand) {
-      fetch(`/api/models/${selectedBrand}`).then(res => res.json()).then(setModels);
-      setSelectedModel('');
-      setSelectedYear('');
-      setSelectedVehicleId(null);
-    }
+  // Derived Data
+  const brands = useMemo(() => Array.from(new Set(VEHICLES.map(v => v.brand))).sort(), []);
+  
+  const models = useMemo(() => {
+    if (!selectedBrand) return [];
+    return Array.from(new Set(VEHICLES.filter(v => v.brand === selectedBrand).map(v => v.model))).sort();
   }, [selectedBrand]);
 
-  useEffect(() => {
-    if (selectedBrand && selectedModel) {
-      fetch(`/api/years/${selectedBrand}/${selectedModel}`).then(res => res.json()).then(setYears);
-      setSelectedYear('');
-      setSelectedVehicleId(null);
-    }
-  }, [selectedModel]);
+  const years = useMemo(() => {
+    if (!selectedBrand || !selectedModel) return [];
+    return Array.from(new Set(VEHICLES.filter(v => v.brand === selectedBrand && v.model === selectedModel).map(v => v.year))).sort((a, b) => b - a);
+  }, [selectedBrand, selectedModel]);
 
-  useEffect(() => {
-    if (selectedBrand && selectedModel && selectedYear) {
-      fetch(`/api/engines/${selectedBrand}/${selectedModel}/${selectedYear}`).then(res => res.json()).then(setEngines);
-      setSelectedVehicleId(null);
-    }
-  }, [selectedYear]);
+  const engines = useMemo(() => {
+    if (!selectedBrand || !selectedModel || !selectedYear) return [];
+    return VEHICLES.filter(v => v.brand === selectedBrand && v.model === selectedModel && v.year === selectedYear);
+  }, [selectedBrand, selectedModel, selectedYear]);
 
-  useEffect(() => {
-    if (selectedVehicleId) {
-      fetch(`/api/vehicle/${selectedVehicleId}`).then(res => res.json()).then(setVehicleDetails);
-    }
+  const vehicleDetails = useMemo(() => {
+    return VEHICLES.find(v => v.id === selectedVehicleId) || null;
   }, [selectedVehicleId]);
 
   const handleNext = () => setStep(s => s + 1);
   const handleBack = () => setStep(s => s - 1);
 
   const generateWhatsAppLink = () => {
-    if (!vehicleDetails || !settings.whatsapp_number) return '#';
+    if (!vehicleDetails) return '#';
     
     const message = `Olá! Gostaria de verificar disponibilidade para troca de óleo.
 
@@ -105,7 +85,7 @@ export default function App() {
 
 Aguardando confirmação 🙂`;
 
-    return `https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(message)}`;
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -187,7 +167,12 @@ Aguardando confirmação 🙂`;
                   <select 
                     className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 appearance-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-white"
                     value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedBrand(e.target.value);
+                      setSelectedModel('');
+                      setSelectedYear('');
+                      setSelectedVehicleId(null);
+                    }}
                   >
                     <option value="" className="bg-zinc-900">Selecione a marca</option>
                     {brands.map(b => <option key={b} value={b} className="bg-zinc-900">{b}</option>)}
@@ -200,7 +185,11 @@ Aguardando confirmação 🙂`;
                     <select 
                       className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 appearance-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-white"
                       value={selectedModel}
-                      onChange={(e) => setSelectedModel(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedModel(e.target.value);
+                        setSelectedYear('');
+                        setSelectedVehicleId(null);
+                      }}
                     >
                       <option value="" className="bg-zinc-900">Selecione o modelo</option>
                       {models.map(m => <option key={m} value={m} className="bg-zinc-900">{m}</option>)}
@@ -214,7 +203,10 @@ Aguardando confirmação 🙂`;
                     <select 
                       className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 appearance-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-white"
                       value={selectedYear}
-                      onChange={(e) => setSelectedYear(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedYear(Number(e.target.value));
+                        setSelectedVehicleId(null);
+                      }}
                     >
                       <option value="" className="bg-zinc-900">Selecione o ano</option>
                       {years.map(y => <option key={y} value={y} className="bg-zinc-900">{y}</option>)}
