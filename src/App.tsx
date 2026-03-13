@@ -133,7 +133,7 @@ Aguardando confirmação 🙂`;
           <div className="bg-emerald-500 p-2.5 rounded-xl shadow-lg shadow-emerald-500/30">
             <Droplets className="text-white w-7 h-7" />
           </div>
-          <span className="font-extrabold text-2xl md:text-3xl tracking-tighter text-white uppercase italic">PH TROCA DE OLEO</span>
+          <span className="font-extrabold text-2xl md:text-3xl tracking-tighter text-white uppercase italic">LUCAS TJ</span>
         </div>
       </header>
 
